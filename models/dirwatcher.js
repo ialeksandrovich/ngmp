@@ -9,25 +9,25 @@ const statAsync = promisify(fs.stat);
 export class DirWatcher extends EventEmitter{
     constructor(props) {
         super(props);
-        this.files = {};
+        this.filesModDatesHash = {};
         this.timeoutId = null;
     }
 
     async checkDirectory(path, delay) {
         try {
-            const newFiles = {};
+            const filesModDatesHash = {};
             const files = await readDirAsync(path);
             const readFileStatPromises = files.map(async file => {
                 const stat = await statAsync(`${path}/${file}`);
-                newFiles[file] = stat.mtime;
+                filesModDatesHash[file] = stat.mtime;
             });
             await Promise.all(readFileStatPromises).then(() => {
-                if (!(_.isEqual(newFiles, this.files))) {
-                    this.files = newFiles;
+                if (!(_.isEqual(filesModDatesHash, this.filesModDatesHash))) {
+                    this.filesModDatesHash = filesModDatesHash;
                     this.emit('changed', path, files);
                 }
-                this.timeoutId = setTimeout(() => this.checkDirectory(path, delay), delay);
             });
+            this.timeoutId = setTimeout(() => this.watch(path, delay), delay);
         } catch (error) {
             console.error(error);
             throw error;
