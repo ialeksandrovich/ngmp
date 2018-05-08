@@ -1,6 +1,7 @@
-import configs from "./config/configs";
-import { User, Product } from "./models";
+import { DirWatcher } from "./models";
+import { Importer } from "./models";
 
-console.log(configs.name);
-const user = new User;
-const product = new Product;
+const dirWatcher = new DirWatcher();
+const importer = new Importer();
+dirWatcher.watch(`${process.cwd()}/data`, 3000);
+dirWatcher.on('changed', importer.importAsync);
