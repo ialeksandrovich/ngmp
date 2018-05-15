@@ -10,8 +10,7 @@ export class Importer {
             const readFilePromises = files.map(async file => await readFileAsync(`${path}/${file}`, 'utf8'));
             await Promise.all(readFilePromises).then(files => files.forEach(async file => await console.log(Papa.parse(file))))
         } catch (error) {
-            console.error(error);
-            throw error;
+            console.log(error);
         }
     }
 

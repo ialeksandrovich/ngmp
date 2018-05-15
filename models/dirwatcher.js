@@ -29,8 +29,7 @@ export class DirWatcher extends EventEmitter{
             });
             this.timeoutId = setTimeout(() => this.watch(path, delay), delay);
         } catch (error) {
-            console.error(error);
-            throw error;
+            console.log(error);
         }
 
     }
