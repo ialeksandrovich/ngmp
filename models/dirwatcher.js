@@ -9,25 +9,25 @@ const statAsync = promisify(fs.stat);
 export class DirWatcher extends EventEmitter{
     constructor(props) {
         super(props);
-        this.filesModDatesHash = {};
+        this.lastModificationDates = {};
         this.timeoutId = null;
     }
 
     async checkDirectory(path, delay) {
         try {
-            const filesModDatesHash = {};
+            const lastModificationDates = {};
             const files = await readDirAsync(path);
-            const readFileStatPromises = files.map(async file => {
+            const fileStatisticsPromises = files.map(async file => {
                 const stat = await statAsync(`${path}/${file}`);
-                filesModDatesHash[file] = stat.mtime;
+                lastModificationDates[file] = stat.mtime;
             });
-            await Promise.all(readFileStatPromises).then(() => {
-                if (!(_.isEqual(filesModDatesHash, this.filesModDatesHash))) {
-                    this.filesModDatesHash = filesModDatesHash;
+            await Promise.all(fileStatisticsPromises).then(() => {
+                if (!(_.isEqual(lastModificationDates, this.lastModificationDates))) {
+                    this.lastModificationDates = lastModificationDates;
                     this.emit('changed', path, files);
                 }
             });
-            this.timeoutId = setTimeout(() => this.watch(path, delay), delay);
+            this.timeoutId = setTimeout(() => this.checkDirectory(path, delay), delay);
         } catch (error) {
             console.log(error);
         }
@@ -36,12 +36,13 @@ export class DirWatcher extends EventEmitter{
 
     watch(path, delay) {
         this.checkDirectory(path, delay).then(
-            () => console.log("Directory was checked successfully"),
-            () => console.log("Directory wasn't checked"),
+            () => console.log("Checking started"),
+            () => console.log("Checking ended"),
         );
     }
 
     unwatch() {
         clearTimeout(this.timeoutId);
+        console.log("Checking ended");
     }
 }

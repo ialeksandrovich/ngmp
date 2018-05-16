@@ -15,8 +15,10 @@ export class Importer {
     }
 
     importSync(path, files) {
-        files.forEach(file => {
-            console.log(Papa.parse(fs.readFileSync(`${path}/${file}`, 'utf8')));
-        });
+        try {
+            files.forEach(file => console.log(Papa.parse(fs.readFileSync(`${path}/${file}`, 'utf8'))));
+        } catch (error) {
+            console.log(error);
+        }
     }
 }
