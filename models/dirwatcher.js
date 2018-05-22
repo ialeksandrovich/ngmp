@@ -3,46 +3,42 @@ import fs from 'fs';
 import * as _ from 'lodash';
 import { promisify } from 'util';
 
-const readDirAsync = promisify(fs.readdir);
-const statAsync = promisify(fs.stat);
+const readDir = promisify(fs.readdir);
+const stat = promisify(fs.stat);
 
 export class DirWatcher extends EventEmitter{
     constructor(props) {
         super(props);
         this.lastModificationDates = {};
+        this.lastCheckModificationDates = {};
         this.timeoutId = null;
     }
 
-    async checkDirectory(path, delay) {
-        try {
-            const lastModificationDates = {};
-            const files = await readDirAsync(path);
-            const fileStatisticsPromises = files.map(async file => {
-                const stat = await statAsync(`${path}/${file}`);
-                lastModificationDates[file] = stat.mtime;
-            });
-            await Promise.all(fileStatisticsPromises).then(() => {
-                if (!(_.isEqual(lastModificationDates, this.lastModificationDates))) {
-                    this.lastModificationDates = lastModificationDates;
-                    this.emit('changed', path, files);
+    checkDirectory = (path, delay) => {
+        return readDir(path).then(files => {
+            const fileStatisticsPromises = files.map(file => stat(`${path}/${file}`).then(stat => {
+                if (stat.isFile()) {
+                    this.lastCheckModificationDates[`${path}/${file}`] = stat.mtime.valueOf();
+                } else {
+                    return this.checkDirectory(`${path}/${file}`, delay);
                 }
-            });
-            this.timeoutId = setTimeout(() => this.checkDirectory(path, delay), delay);
-        } catch (error) {
-            console.log(error);
-        }
-
+            }));
+            return Promise.all(fileStatisticsPromises);
+        });
     }
 
-    watch(path, delay) {
-        this.checkDirectory(path, delay).then(
-            () => console.log("Checking started"),
-            () => console.log("Checking ended"),
-        );
+    watch = (path, delay) => {
+        this.checkDirectory(path, delay).then(() => {
+            if (!(_.isEqual(this.lastCheckModificationDates, this.lastModificationDates))) {
+                Object.assign(this.lastModificationDates, this.lastCheckModificationDates);
+                this.emit('changed', Object.keys(this.lastModificationDates));
+            }
+            this.timeoutId = setTimeout(this.watch, delay, path, delay);
+        }).catch((error) => console.log(error));
     }
 
-    unwatch() {
+    unwatch = () => {
         clearTimeout(this.timeoutId);
-        console.log("Checking ended");
     }
 }
+

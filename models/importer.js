@@ -2,23 +2,14 @@ import Papa from 'papaparse';
 import fs from 'fs';
 import { promisify } from 'util';
 
-const readFileAsync = promisify(fs.readFile);
+const readFile = promisify(fs.readFile);
 
 export class Importer {
-    async importAsync(path, files) {
-        try {
-            const readFilePromises = files.map(async file => await readFileAsync(`${path}/${file}`, 'utf8'));
-            await Promise.all(readFilePromises).then(files => files.forEach(async file => await console.log(Papa.parse(file))))
-        } catch (error) {
-            console.log(error);
-        }
+    import(path) {
+        return readFile(path, 'utf8').then(file => Papa.parse(file));
     }
 
-    importSync(path, files) {
-        try {
-            files.forEach(file => console.log(Papa.parse(fs.readFileSync(`${path}/${file}`, 'utf8'))));
-        } catch (error) {
-            console.log(error);
-        }
+    importSync(path) {
+        return Papa.parse(fs.readFileSync(path, 'utf8'));
     }
 }
