@@ -1,0 +1,7 @@
+.header {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  font-size: 23px;
+  line-height: 48px;
+}
